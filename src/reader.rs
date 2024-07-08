@@ -3,28 +3,43 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
+const ERROR_FLAGS: [&str; 2] = ["Loop time", "ERROR"];
+const MPI_FLAGS: [&str; 2] = [
+    "MPI task timing breakdown",
+    "Per MPI rank memory allocation",
+];
+
+/** This Rust code uses the Polars library to parse log files,
+particularly from LAMMPS simulations. The goal is to read
+specific data blocks from the log file and convert them
+into a DataFrame format for further analysis. The parsing
+logic focuses on extracting data between specific MPI
+flags and handling error flags appropriately. */
 pub struct LogLammpsReader {
     log_file_name: PathBuf,
-    run_number: u32,
+    thermo_run_number: u32,
 }
 
 impl LogLammpsReader {
+    /** Constructor to create a new instance of LogLammpsReader.
+    It takes a log file name and an optional thermo run number. */
     pub fn new(
         log_file_name: PathBuf,
         run_number: Option<u32>,
     ) -> Result<DataFrame, Box<dyn std::error::Error>> {
         LogLammpsReader {
             log_file_name,
-            run_number: run_number.unwrap_or_default(),
+            thermo_run_number: run_number.unwrap_or_default(),
         }
         .parse()
     }
 
+    /// Method to parse the log file and convert the log file into a DataFrame.
     fn parse(&self) -> Result<DataFrame, Box<dyn std::error::Error>> {
         let log_file = File::open(&self.log_file_name)?;
         let log_reader = BufReader::new(log_file);
 
-        let mut current_run_num: u32 = 0;
+        let mut current_thermo_run_num: u32 = 0;
         let mut run_flag = false;
         let mut minimization_flag = false;
         let mut log_header: Vec<String> = Vec::new();
@@ -33,35 +48,40 @@ impl LogLammpsReader {
         for line_result in log_reader.lines() {
             let line = line_result?;
 
+            // Check for MPI flags to set minimization and run flags.
             if !minimization_flag || !run_flag {
-                if line.starts_with("MPI task timing breakdown") {
+                if line.starts_with(MPI_FLAGS[0]) {
                     minimization_flag = true;
-                } else if line.starts_with("Per MPI rank memory allocation") && minimization_flag {
+                } else if line.starts_with(MPI_FLAGS[1]) && minimization_flag {
                     run_flag = true;
                 }
                 continue;
             }
 
+            // Capture the header line once the flags are set.
             if log_header.is_empty() {
                 log_header = line.split_whitespace().map(String::from).collect();
                 continue;
             }
 
-            if line.starts_with("Loop time") || line.starts_with("ERROR") {
+            // Reset flags and increase run number upon encountering error flags.
+            if line.starts_with(ERROR_FLAGS[0]) || line.starts_with(ERROR_FLAGS[1]) {
                 minimization_flag = false;
                 run_flag = false;
-                current_run_num += 1;
-                if current_run_num > self.run_number {
+                current_thermo_run_num += 1;
+                if current_thermo_run_num > self.thermo_run_number {
                     break;
                 }
                 log_header.clear();
                 continue;
             }
 
-            if self.run_number != current_run_num {
+            // Skip lines if the current run number does not match the specified run number.
+            if self.thermo_run_number != current_thermo_run_num {
                 continue;
             }
 
+            // Parse data rows and filter out invalid rows.
             let row: Vec<f64> = line
                 .split_whitespace()
                 .filter_map(|s| s.parse().ok())
@@ -75,11 +95,14 @@ impl LogLammpsReader {
         }
 
         if log_data.is_empty() {
-            return Err(
-                format!("No data found in the log file for run {}", self.run_number).into(),
-            );
+            return Err(format!(
+                "No data found in the log file for run {}",
+                self.thermo_run_number
+            )
+            .into());
         }
 
+        // Convert the parsed data into a polars Series
         let columns: Vec<Series> = (0..log_data[0].len())
             .map(|i| {
                 let column_data: Vec<f64> = log_data.iter().map(|row| row[i]).collect();
