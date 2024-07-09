@@ -1,6 +1,6 @@
 # Log LAMMPS Reader
 
-Log LAMMPS Reader is a high-performance Rust library and Python extension for reading LAMMPS log files and converting them into DataFrames using the Polars library. This project leverages PyO3 to create a Python module that interfaces with Rust code, ensuring both speed and efficiency.
+Log LAMMPS Reader is a high-performance Rust library and Python extension for reading LAMMPS log files and converting them into DataFrames using the [Polars](https://pola.rs/) library. This project leverages [PyO3](https://pyo3.rs/) to create a Python module that interfaces with Rust code, ensuring both speed and efficiency.
 
 This package returns a polars DataFrame allowing the user to use powerful data manipulations (e.g filters) provided through polars.
 
