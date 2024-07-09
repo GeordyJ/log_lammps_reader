@@ -15,8 +15,10 @@ description = "High-performance Rust library and Python extension for reading LA
 authors = [{name = "Geordy Jomon", email = "gj82@njit.edu"}]
 readme = "README.md"
 license = {text = "MIT License"}
+
 [project.urls]
 Repository = "https://github.com/GeordyJ/log_lammps_reader"
 Issues = "https://github.com/GeordyJ/log_lammps_reader/issues"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]

@@ -11,13 +11,7 @@ This package returns a polars DataFrame allowing the user to use powerful data m
 - Exposes functionality to Python through a PyO3 module
 - Gets thermo data for multiple thermo runs
 - Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log)
-- Only stores the the needed thermo run data specified by user
-
-## Requirements
-
-- Rust (latest stable version recommended)
-- Python 3.6 or later
-- Cargo (Rust package manager)
+- Only stores the needed thermo run data specified by user
 
 ## Installation
 
@@ -29,13 +23,20 @@ Using pip:
 pip install log-lammps-reader
 ```
 
+## Build From Source
+
 Alternatively, to build the Python module, follow these steps:
 
+### Requirements
 
-1. Ensure you have `maturin` and `polars` installed:
+- Rust (latest stable version recommended)
+- Python 3.8 or later
+- Cargo (Rust package manager)
+
+1. Ensure you have `maturin` installed:
 
    ```bash
-   pip install maturin polars
+   pip install maturin
    ```
 
 2. Compile the Rust packages and install the python module.
@@ -47,41 +48,32 @@ Alternatively, to build the Python module, follow these steps:
 ## Usage Examples
 
 ### Python
+
 ```python
-import polars as pl
-import numpy as np
 import log_lammps_reader
 
-
 thermo_number = 0 # Choose the nth number of thermo run
-df = log_lammps_reader.new('log.lammps', thermo_number) # polars DataFrame
-equilibrated_df = df.filter(pl.col('Time') > 1) # Use polars to filter data.
+df = log_lammps_reader.new('log.lammps') # polars DataFrame for 1st thermo run
+
+# Or choose the nth number of thermo run (default n = 0)
+df = log_lammps_reader.new('log.lammps', n) 
 time = df.get_column('Time') # Get any thermo column
 time_squared = time ** 2 # use broadcasting operations similar to numpy
-step = np.array(df.get_column('Step')) # or use numpy
+
+# Use polars to filter the results.
+import polars as pl
+equilibrated_df = df.filter(pl.col('Time') > 1) 
+
+# Convert data to numpy if needed
+import numpy as np
+step = np.array(df.get_column('Step'))
 ```
 
-### Rust
+Example of a DataFrame for a LAMMPS log file.
 
-First install using `cargo build --release` and add it to your project
-```rust
-use log_lammps_reader::LogLammpsReader;
-
-fn main() {
-    let log_file_name = "log.lammps";
-    let run_number = Some(0);
-
-    match LogLammpsReader::new(log_file_name.into(), run_number) {
-        Ok(df) => println!("DataFrame read successfully: {:?}", df),
-        Err(e) => eprintln!("Error reading DataFrame: {}", e),
-    }
-}
-```
-
-### Example of a DataFrame for a LAMMPS log file.
 ```python
 >>> import log_lammps_reader
->>> df = log_lammps_reader.new('/Users/geordy/github/tjat/log.lammps')
+>>> df = log_lammps_reader.new('log.lammps')
 >>> df
 shape: (10_000_002, 10)
 ┌──────────────┬───────────┬───────────┬───────────┬───┬───────┬────────────┬───────────┬───────────┐
@@ -124,3 +116,20 @@ Series: 'Time' [f64]
 >>>
 ```
 
+### Rust
+
+Clone the repo and add it to your project
+
+```rust
+use log_lammps_reader::LogLammpsReader;
+
+fn main() {
+    let log_file_name = "log.lammps";
+    let run_number = Some(0);
+
+    match LogLammpsReader::new(log_file_name.into(), run_number) {
+        Ok(df) => println!("DataFrame read successfully: {:?}", df),
+        Err(e) => eprintln!("Error reading DataFrame: {}", e),
+    }
+}
+```
