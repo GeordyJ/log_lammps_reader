@@ -43,7 +43,8 @@ impl LogLammpsReader {
         let mut log_header: Vec<String> = Vec::new();
         let mut log_data: Vec<Vec<f64>> = Vec::new();
 
-        let log_file: File = File::open(&self.log_file_name)?;
+        let log_file: File = File::open(&self.log_file_name)
+            .map_err(|_| format!("Log file '{}' not found...", &self.log_file_name.display()))?;
         let log_reader: BufReader<File> = BufReader::new(log_file);
 
         for line_result in log_reader.lines() {
