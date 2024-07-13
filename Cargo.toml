@@ -1,6 +1,6 @@
 [package]
 name = "log_lammps_reader"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,3 +12,4 @@ crate-type = ["cdylib"]
 polars = "0.41.3"
 pyo3 = "0.21.1"
 pyo3-polars = "0.15.0"
+rayon = "1.10.0"

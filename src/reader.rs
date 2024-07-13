@@ -1,4 +1,5 @@
 use polars::prelude::*;
+use rayon::prelude::*;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -36,14 +37,14 @@ impl LogLammpsReader {
 
     /// Method to parse the log file and convert the log file into a DataFrame.
     fn parse(&self) -> Result<DataFrame, Box<dyn std::error::Error>> {
-        let log_file = File::open(&self.log_file_name)?;
-        let log_reader = BufReader::new(log_file);
-
         let mut current_thermo_run_num: u32 = 0;
         let mut run_flag = false;
         let mut minimization_flag = false;
         let mut log_header: Vec<String> = Vec::new();
         let mut log_data: Vec<Vec<f64>> = Vec::new();
+
+        let log_file = File::open(&self.log_file_name)?;
+        let log_reader = BufReader::new(log_file);
 
         for line_result in log_reader.lines() {
             let line = line_result?;
@@ -105,7 +106,7 @@ impl LogLammpsReader {
         // Convert the parsed data into a polars Series
         let columns: Vec<Series> = (0..log_data[0].len())
             .map(|i| {
-                let column_data: Vec<f64> = log_data.iter().map(|row| row[i]).collect();
+                let column_data: Vec<f64> = log_data.par_iter().map(|row| row[i]).collect();
                 Series::new(&log_header[i], column_data)
             })
             .collect();
