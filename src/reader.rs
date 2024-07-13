@@ -38,23 +38,23 @@ impl LogLammpsReader {
     /// Method to parse the log file and convert the log file into a DataFrame.
     fn parse(&self) -> Result<DataFrame, Box<dyn std::error::Error>> {
         let mut current_thermo_run_num: u32 = 0;
-        let mut run_flag = false;
-        let mut minimization_flag = false;
+        let mut data_flag: bool = false;
+        let mut minimization_flag: bool = false;
         let mut log_header: Vec<String> = Vec::new();
         let mut log_data: Vec<Vec<f64>> = Vec::new();
 
-        let log_file = File::open(&self.log_file_name)?;
-        let log_reader = BufReader::new(log_file);
+        let log_file: File = File::open(&self.log_file_name)?;
+        let log_reader: BufReader<File> = BufReader::new(log_file);
 
         for line_result in log_reader.lines() {
-            let line = line_result?;
+            let line: String = line_result?;
 
             // Check for MPI flags to set minimization and run flags.
-            if !minimization_flag || !run_flag {
+            if !minimization_flag || !data_flag {
                 if line.starts_with(MPI_FLAGS[0]) {
                     minimization_flag = true;
                 } else if line.starts_with(MPI_FLAGS[1]) && minimization_flag {
-                    run_flag = true;
+                    data_flag = true;
                 }
                 continue;
             }
@@ -68,7 +68,7 @@ impl LogLammpsReader {
             // Reset flags and increase run number upon encountering error flags.
             if line.starts_with(ERROR_FLAGS[0]) || line.starts_with(ERROR_FLAGS[1]) {
                 minimization_flag = false;
-                run_flag = false;
+                data_flag = false;
                 current_thermo_run_num += 1;
                 if current_thermo_run_num > self.thermo_run_number {
                     break;
