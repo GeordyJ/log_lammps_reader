@@ -10,7 +10,11 @@ log files. The main function `new` serves as a bridge between
 Rust and Python, allowing Python code to call Rust functions to
 parse log files. It utilizes the LogLammpsReader struct from the
 `reader` module to handle the actual parsing and conversion of log
-file data into a DataFrame. */
+file data into a DataFrame.
+
+Parameters:
+log_file_name: File path for the LAMMPS log file
+thermo_run_number: The index of the run thermo (default = 0)*/
 #[pyfunction]
 fn new(log_file_name: &str, thermo_run_number: Option<u32>) -> PyResult<PyDataFrame> {
     match LogLammpsReader::new(log_file_name.into(), thermo_run_number) {

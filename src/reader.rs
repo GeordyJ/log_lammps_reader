@@ -23,7 +23,10 @@ pub struct LogLammpsReader {
 
 impl LogLammpsReader {
     /** Constructor to create a new instance of LogLammpsReader.
-    It takes a log file name and an optional thermo run number. */
+
+    Parameters:
+    log_file_name: File path for the LAMMPS log file
+    thermo_run_number: The index of the run thermo (default = 0)*/
     pub fn new(
         log_file_name: PathBuf,
         run_number: Option<u32>,
@@ -86,7 +89,7 @@ impl LogLammpsReader {
             // Parse data rows and filter out invalid rows.
             let row: Vec<f64> = line
                 .split_whitespace()
-                .filter_map(|s| s.parse().ok())
+                .filter_map(|s: &str| s.parse().ok())
                 .collect();
 
             if row.len() != log_header.len() {
