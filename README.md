@@ -23,6 +23,7 @@ Using pip:
 pip install log-lammps-reader
 ```
 
+
 ## Build From Source
 
 Alternatively, to build the Python module, follow these steps:
@@ -36,7 +37,7 @@ Alternatively, to build the Python module, follow these steps:
 1. Ensure you have `maturin` installed:
 
    ```bash
-   pip install maturin
+   pip install maturin # or use conda or micromamba
    ```
 
 2. Compile the Rust packages and install the python module.
@@ -47,15 +48,22 @@ Alternatively, to build the Python module, follow these steps:
 
 ## Usage Examples
 
-### Python
+- Note the `run_number = 0` gives the first data output which might include the minimization run.
+- To get the useful data start with `run_number = 1`.
+
+
+### Build For Python
 
 ```python
 import log_lammps_reader
 
 thermo_number = 0 # Choose the nth number of thermo run
 df = log_lammps_reader.new('log.lammps') # polars DataFrame for 1st thermo run
+# usually the minimization run
 
 # Or choose the nth number of thermo run (default n = 0)
+# n = 0 might consider the MPI minimization data, so in most cases
+# start with n = 1
 df = log_lammps_reader.new('log.lammps', n) 
 time = df.get_column('Time') # Get any thermo column
 time_squared = time ** 2 # use broadcasting operations similar to numpy
@@ -73,7 +81,7 @@ Example of a DataFrame for a LAMMPS log file.
 
 ```python
 >>> import log_lammps_reader
->>> df = log_lammps_reader.new('log.lammps')
+>>> df = log_lammps_reader.new('log.lammps', 1)
 >>> df
 shape: (10_000_002, 10)
 ┌──────────────┬───────────┬───────────┬───────────┬───┬───────┬────────────┬───────────┬───────────┐
@@ -125,7 +133,9 @@ use log_lammps_reader::LogLammpsReader;
 
 fn main() {
     let log_file_name = "log.lammps";
-    let run_number = Some(0);
+    // skipping minimization
+    let run_number = Some(1);
+
 
     match LogLammpsReader::new(log_file_name.into(), run_number) {
         Ok(df) => println!("DataFrame read successfully: {:?}", df),

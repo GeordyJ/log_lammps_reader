@@ -5,17 +5,12 @@ use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
 const ERROR_FLAGS: [&str; 2] = ["Loop time", "ERROR"];
-const MPI_FLAGS: [&str; 2] = [
-    "MPI task timing breakdown",
-    "Per MPI rank memory allocation",
-];
+const MPI_FLAG: &str = "Per MPI rank memory allocation";
 
 /** This Rust code uses the Polars library to parse log files,
 particularly from LAMMPS simulations. The goal is to read
 specific data blocks from the log file and convert them
-into a DataFrame format for further analysis. The parsing
-logic focuses on extracting data between specific MPI
-flags and handling error flags appropriately. */
+into a DataFrame format for further analysis. */
 pub struct LogLammpsReader {
     log_file_name: PathBuf,
     thermo_run_number: u32,
@@ -35,29 +30,30 @@ impl LogLammpsReader {
             log_file_name,
             thermo_run_number: run_number.unwrap_or_default(),
         }
-        .parse()
+        .parse_lammps_log()
     }
 
     /// Method to parse the log file and convert the log file into a DataFrame.
-    fn parse(&self) -> Result<DataFrame, Box<dyn std::error::Error>> {
+    fn parse_lammps_log(&self) -> Result<DataFrame, Box<dyn std::error::Error>> {
         let mut current_thermo_run_num: u32 = 0;
         let mut data_flag: bool = false;
-        let mut minimization_flag: bool = false;
         let mut log_header: Vec<String> = Vec::new();
         let mut log_data: Vec<Vec<f64>> = Vec::new();
 
-        let log_file: File = File::open(&self.log_file_name)
-            .map_err(|_| format!("Log file '{}' not found...", &self.log_file_name.display()))?;
+        let log_file: File = File::open(&self.log_file_name).map_err(|_| {
+            format!(
+                "Log file at '{}' not found...\nCheck 'log_file_name' parameter",
+                &self.log_file_name.display()
+            )
+        })?;
         let log_reader: BufReader<File> = BufReader::new(log_file);
 
         for line_result in log_reader.lines() {
             let line: String = line_result?;
 
-            // Check for MPI flags to set minimization and run flags.
-            if !minimization_flag || !data_flag {
-                if line.starts_with(MPI_FLAGS[0]) {
-                    minimization_flag = true;
-                } else if line.starts_with(MPI_FLAGS[1]) && minimization_flag {
+            // Check for MPI flag to set minimization and data flags.
+            if !data_flag {
+                if line.starts_with(MPI_FLAG) {
                     data_flag = true;
                 }
                 continue;
@@ -71,7 +67,6 @@ impl LogLammpsReader {
 
             // Reset flags and increase run number upon encountering error flags.
             if line.starts_with(ERROR_FLAGS[0]) || line.starts_with(ERROR_FLAGS[1]) {
-                minimization_flag = false;
                 data_flag = false;
                 current_thermo_run_num += 1;
                 if current_thermo_run_num > self.thermo_run_number {
@@ -86,12 +81,13 @@ impl LogLammpsReader {
                 continue;
             }
 
-            // Parse data rows and filter out invalid rows.
+            // Parse data rows
             let row: Vec<f64> = line
                 .split_whitespace()
                 .filter_map(|s: &str| s.parse().ok())
                 .collect();
 
+            // filter out invalid rows.
             if row.len() != log_header.len() {
                 continue;
             }
@@ -101,8 +97,11 @@ impl LogLammpsReader {
 
         if log_data.is_empty() {
             return Err(format!(
-                "No data found in the log file for run {}",
-                self.thermo_run_number
+                "No data found in the log file for run: {}\nThis may be caused due to
+                \n1. Incorrect 'run_number' parameter (Try 'run_number = {}')
+                \n2. Unsual format of log file",
+                self.thermo_run_number,
+                self.thermo_run_number - 1
             )
             .into());
         }

@@ -4,17 +4,15 @@ use pyo3_polars::PyDataFrame;
 mod reader;
 use reader::LogLammpsReader;
 
-/** This Rust code integrates with Python using PyO3 and PyPolars
-to provide a Python interface for reading and processing LAMMPS
-log files. The main function `new` serves as a bridge between
-Rust and Python, allowing Python code to call Rust functions to
-parse log files. It utilizes the LogLammpsReader struct from the
-`reader` module to handle the actual parsing and conversion of log
-file data into a DataFrame.
+/**
+### Parameters:
+`log_file_name`: File path for the LAMMPS log file
+`thermo_run_number`: The index of the run thermo (default = 0)
+Note:
+The default thermo_run_number includes the MPI minimization data
+So usually what you need will start at index 1
 
-Parameters:
-log_file_name: File path for the LAMMPS log file
-thermo_run_number: The index of the run thermo (default = 0)*/
+*/
 #[pyfunction]
 fn new(log_file_name: &str, thermo_run_number: Option<u32>) -> PyResult<PyDataFrame> {
     match LogLammpsReader::new(log_file_name.into(), thermo_run_number) {
@@ -26,9 +24,16 @@ fn new(log_file_name: &str, thermo_run_number: Option<u32>) -> PyResult<PyDataFr
     }
 }
 
-/// Adds the rust function to the python module.
+/** Adds the rust function to the python module.
+This Rust code integrates with Python using PyO3 and PyPolars
+to provide a Python interface for reading and processing LAMMPS
+log files. The main function `new` serves as a bridge between
+Rust and Python, allowing Python code to call Rust functions to
+parse log files. It utilizes the LogLammpsReader struct from the
+`reader` module to handle the actual parsing and conversion of log
+file data into a DataFrame. */
 #[pymodule]
-fn log_lammps_reader(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn log_lammps_reader(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(new, m)?)?;
     Ok(())
 }
