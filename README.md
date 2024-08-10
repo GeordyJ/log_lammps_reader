@@ -2,7 +2,9 @@
 
 Log LAMMPS Reader is a high-performance Rust library and Python extension for reading LAMMPS log files and converting them into DataFrames using the [Polars](https://pola.rs/) library. This project leverages [PyO3](https://pyo3.rs/) to create a Python module that interfaces with Rust code, ensuring both speed and efficiency.
 
-This package returns a polars DataFrame allowing the user to use powerful data manipulations (e.g filters) provided through polars.
+This package returns a polars DataFrame allowing the user to use powerful data manipulations (e.g filters) provided through polars. The user can specify which specific thermo output given by `run` or `mimimize` that is required.
+
+It also has the ability to get the lines in the log file that start with a certain string prefix, like `fix` or `print` extremely quickly using rust backend. This can be parsed using python to get information about the parameters set for the simulation.
 
 ## Features
 
@@ -12,11 +14,9 @@ This package returns a polars DataFrame allowing the user to use powerful data m
 - Gets thermo data for multiple thermo runs
 - Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log)
 - Only stores the needed thermo run data specified by user
-- Able to get lines in the log file which starts with a certain string prefix
+- Also able to get lines in the log file which starts with a certain string prefix
 
 ## Installation
-
-### Python
 
 Using pip:
 
@@ -24,28 +24,7 @@ Using pip:
 pip install log-lammps-reader
 ```
 
-
-## Build From Source
-
-Alternatively, to build the Python module, follow these steps:
-
-### Requirements
-
-- Rust (latest stable version recommended)
-- Python 3.8 or later
-- Cargo (Rust package manager)
-
-1. Ensure you have `maturin` installed:
-
-   ```bash
-   pip install maturin # or use conda or micromamba
-   ```
-
-2. Compile the Rust packages and install the python module.
-
-    ```bash
-    maturin develop --release
-    ```
+Alternatively look at build instructions to build the project.
 
 ## Usage Examples
 
@@ -126,8 +105,14 @@ Series: 'Time' [f64]
 >>> df.get_column('Time').std()
 28867.520676357886
 # Example of getting the lines that start with a certain prefix in the log file
+# Returns a list of strings.
 >>> log_lammps_reader.log_starts_with('log.lammps', 'fix')
-['fix WALL methane wall/region/tjatjopoulos pore 0.005547314165349033 3.565 0.4824 ${radius}', 'fix WALL methane wall/region/tjatjopoulos pore 0.005547314165349033 3.565 0.4824 30', 'fix NVT all nvt temp ${temp_sim} ${temp_sim} $(100.0*dt)', 'fix NVT all nvt temp 298 ${temp_sim} $(100.0*dt)', 'fix NVT all nvt temp 298 298 $(100.0*dt)', 'fix NVT all nvt temp 298 298 0.10000000000000000555']
+['fix WALL methane wall/region/tjatjopoulos pore 0.005547314165349033 3.565 0.4824 ${radius}',
+ 'fix WALL methane wall/region/tjatjopoulos pore 0.005547314165349033 3.565 0.4824 30',
+ 'fix NVT all nvt temp ${temp_sim} ${temp_sim} $(100.0*dt)',
+ 'fix NVT all nvt temp 298 ${temp_sim} $(100.0*dt)',
+ 'fix NVT all nvt temp 298 298 $(100.0*dt)',
+ 'fix NVT all nvt temp 298 298 0.10000000000000000555']
 ```
 
 ### Rust
@@ -149,3 +134,25 @@ fn main() {
     }
 }
 ```
+
+## Build From Source
+
+Alternatively, to build the Python module, follow these steps:
+
+### Requirements
+
+- Rust (latest stable version recommended)
+- Python 3.8 or later
+- Cargo (Rust package manager)
+
+1. Ensure you have `maturin` installed:
+
+   ```bash
+   pip install maturin # or use conda or micromamba
+   ```
+
+2. Compile the Rust packages and install the python module.
+
+    ```bash
+    maturin develop --release
+    ```
