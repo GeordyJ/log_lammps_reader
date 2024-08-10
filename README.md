@@ -12,6 +12,7 @@ This package returns a polars DataFrame allowing the user to use powerful data m
 - Gets thermo data for multiple thermo runs
 - Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log)
 - Only stores the needed thermo run data specified by user
+- Able to get lines in the log file which starts with a certain string prefix
 
 ## Installation
 
@@ -75,6 +76,9 @@ equilibrated_df = df.filter(pl.col('Time') > 1)
 # Convert data to numpy if needed
 import numpy as np
 step = np.array(df.get_column('Step'))
+
+# Get lines in the log that start with a prefix string
+fixes_list = log_lammps_reader.log_starts_with('log.lammps', 'fix')
 ```
 
 Example of a DataFrame for a LAMMPS log file.
@@ -121,7 +125,9 @@ Series: 'Time' [f64]
 50000.00399999919
 >>> df.get_column('Time').std()
 28867.520676357886
->>>
+# Example of getting the lines that start with a certain prefix in the log file
+>>> log_lammps_reader.log_starts_with('log.lammps', 'fix')
+['fix WALL methane wall/region/tjatjopoulos pore 0.005547314165349033 3.565 0.4824 ${radius}', 'fix WALL methane wall/region/tjatjopoulos pore 0.005547314165349033 3.565 0.4824 30', 'fix NVT all nvt temp ${temp_sim} ${temp_sim} $(100.0*dt)', 'fix NVT all nvt temp 298 ${temp_sim} $(100.0*dt)', 'fix NVT all nvt temp 298 298 $(100.0*dt)', 'fix NVT all nvt temp 298 298 0.10000000000000000555']
 ```
 
 ### Rust
