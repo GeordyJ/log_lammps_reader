@@ -13,7 +13,6 @@ specific data blocks from the log file and convert them
 into a DataFrame format for further analysis. */
 pub struct LogLammpsReader {
     log_file_name: PathBuf,
-    thermo_run_number: u32,
 }
 
 impl LogLammpsReader {
@@ -26,27 +25,39 @@ impl LogLammpsReader {
         log_file_name: PathBuf,
         run_number: Option<u32>,
     ) -> Result<DataFrame, Box<dyn std::error::Error>> {
-        LogLammpsReader {
-            log_file_name,
-            thermo_run_number: run_number.unwrap_or_default(),
-        }
-        .parse_lammps_log()
+        LogLammpsReader { log_file_name }.parse_lammps_log(run_number.unwrap_or_default())
+    }
+
+    pub fn log_starts_with(
+        log_file_name: PathBuf,
+        prefix_key: &str,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        LogLammpsReader { log_file_name }.parse_log_starts_with(prefix_key)
+    }
+
+    fn log_buffer_reader(
+        log_file_name: &PathBuf,
+    ) -> Result<BufReader<File>, Box<dyn std::error::Error>> {
+        let log_file: File = File::open(log_file_name).map_err(|_| {
+            format!(
+                "Log file at '{}' not found...\nCheck 'log_file_name' parameter",
+                log_file_name.display()
+            )
+        })?;
+        Ok(BufReader::new(log_file))
     }
 
     /// Method to parse the log file and convert the log file into a DataFrame.
-    fn parse_lammps_log(&self) -> Result<DataFrame, Box<dyn std::error::Error>> {
+    fn parse_lammps_log(
+        &self,
+        thermo_run_number: u32,
+    ) -> Result<DataFrame, Box<dyn std::error::Error>> {
         let mut current_thermo_run_num: u32 = 0;
         let mut data_flag: bool = false;
         let mut log_header: Vec<String> = Vec::new();
         let mut log_data: Vec<Vec<f64>> = Vec::new();
 
-        let log_file: File = File::open(&self.log_file_name).map_err(|_| {
-            format!(
-                "Log file at '{}' not found...\nCheck 'log_file_name' parameter",
-                &self.log_file_name.display()
-            )
-        })?;
-        let log_reader: BufReader<File> = BufReader::new(log_file);
+        let log_reader: BufReader<File> = LogLammpsReader::log_buffer_reader(&self.log_file_name)?;
 
         for line_result in log_reader.lines() {
             let line: String = line_result?;
@@ -69,7 +80,7 @@ impl LogLammpsReader {
             if line.starts_with(ERROR_FLAGS[0]) || line.starts_with(ERROR_FLAGS[1]) {
                 data_flag = false;
                 current_thermo_run_num += 1;
-                if current_thermo_run_num > self.thermo_run_number {
+                if current_thermo_run_num > thermo_run_number {
                     break;
                 }
                 log_header.clear();
@@ -77,7 +88,7 @@ impl LogLammpsReader {
             }
 
             // Skip lines if the current run number does not match the specified run number.
-            if self.thermo_run_number != current_thermo_run_num {
+            if thermo_run_number != current_thermo_run_num {
                 continue;
             }
 
@@ -100,8 +111,8 @@ impl LogLammpsReader {
                 "No data found in the log file for run: {}\nThis may be caused due to
                 \n1. Incorrect 'run_number' parameter (Try 'run_number = {}')
                 \n2. Unsual format of log file",
-                self.thermo_run_number,
-                self.thermo_run_number - 1
+                thermo_run_number,
+                thermo_run_number - 1
             )
             .into());
         }
@@ -115,5 +126,20 @@ impl LogLammpsReader {
             .collect();
 
         Ok(DataFrame::new(columns)?)
+    }
+
+    fn parse_log_starts_with(
+        &self,
+        prefix_key: &str,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let mut matched: Vec<String> = Vec::new();
+        let log_reader: BufReader<File> = LogLammpsReader::log_buffer_reader(&self.log_file_name)?;
+        for line_result in log_reader.lines() {
+            let line: String = line_result?;
+            if line.starts_with(prefix_key) {
+                matched.push(line)
+            }
+        }
+        Ok(matched)
     }
 }
