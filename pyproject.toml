@@ -15,6 +15,7 @@ description = "High-performance Rust library and Python extension for reading LA
 authors = [{name = "Geordy Jomon", email = "gj82@njit.edu"}]
 readme = "README.md"
 license = {text = "MIT License"}
+keywords = ["lammps", "lammps logfile", "lammps log", "log reader", "polars rust"]
 
 [project.urls]
 Repository = "https://github.com/GeordyJ/log_lammps_reader"

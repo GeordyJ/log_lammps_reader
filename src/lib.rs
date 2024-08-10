@@ -34,7 +34,7 @@ This returns a list of strings that satisfy the above key.
 #[pyfunction]
 fn log_starts_with(log_file_name: &str, prefix_key: &str) -> PyResult<Vec<String>> {
     match LogLammpsReader::log_starts_with(log_file_name.into(), prefix_key) {
-        Ok(matched) => Ok(matched),
+        Ok(matched_lines) => Ok(matched_lines),
         Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
             "LogLammpsReader error: {}",
             e

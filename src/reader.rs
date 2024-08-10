@@ -4,8 +4,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
-const ERROR_FLAGS: [&str; 2] = ["Loop time", "ERROR"];
 const MPI_FLAG: &str = "Per MPI rank memory allocation";
+const ERROR_FLAGS: [&str; 2] = ["Loop time", "ERROR"];
 
 /** This Rust code uses the Polars library to parse log files,
 particularly from LAMMPS simulations. The goal is to read
@@ -76,8 +76,8 @@ impl LogLammpsReader {
                 continue;
             }
 
-            // Reset flags and increase run number upon encountering error flags.
-            if line.starts_with(ERROR_FLAGS[0]) || line.starts_with(ERROR_FLAGS[1]) {
+            // Reset flags and increase run number upon encountering any error flags.
+            if ERROR_FLAGS.iter().any(|&flag| line.starts_with(flag)) {
                 data_flag = false;
                 current_thermo_run_num += 1;
                 if current_thermo_run_num > thermo_run_number {
@@ -88,7 +88,7 @@ impl LogLammpsReader {
             }
 
             // Skip lines if the current run number does not match the specified run number.
-            if thermo_run_number != current_thermo_run_num {
+            if current_thermo_run_num != thermo_run_number {
                 continue;
             }
 
@@ -99,11 +99,9 @@ impl LogLammpsReader {
                 .collect();
 
             // filter out invalid rows.
-            if row.len() != log_header.len() {
-                continue;
+            if row.len() == log_header.len() {
+                log_data.push(row);
             }
-
-            log_data.push(row);
         }
 
         if log_data.is_empty() {
@@ -119,8 +117,9 @@ impl LogLammpsReader {
 
         // Convert the parsed data into a polars Series
         let columns: Vec<Series> = (0..log_data[0].len())
-            .map(|i| {
-                let column_data: Vec<f64> = log_data.par_iter().map(|row| row[i]).collect();
+            .map(|i: usize| {
+                let column_data: Vec<f64> =
+                    log_data.par_iter().map(|row: &Vec<f64>| row[i]).collect();
                 Series::new(&log_header[i], column_data)
             })
             .collect();
@@ -132,14 +131,14 @@ impl LogLammpsReader {
         &self,
         prefix_key: &str,
     ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-        let mut matched: Vec<String> = Vec::new();
+        let mut matched_lines: Vec<String> = Vec::new();
         let log_reader: BufReader<File> = LogLammpsReader::log_buffer_reader(&self.log_file_name)?;
         for line_result in log_reader.lines() {
             let line: String = line_result?;
             if line.starts_with(prefix_key) {
-                matched.push(line)
+                matched_lines.push(line)
             }
         }
-        Ok(matched)
+        Ok(matched_lines)
     }
 }
