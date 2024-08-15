@@ -31,9 +31,6 @@ Alternatively look at build instructions to build the project.
 - Note the `run_number = 0` gives the first data output which might include the minimization run.
 - To get the useful data start with `run_number = 1`.
 
-
-### Build For Python
-
 ```python
 import log_lammps_reader
 
@@ -115,7 +112,7 @@ Series: 'Time' [f64]
  'fix NVT all nvt temp 298 298 0.10000000000000000555']
 ```
 
-### Rust
+### Rust API
 
 Clone the repo and add it to your project
 

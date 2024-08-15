@@ -18,9 +18,11 @@ pub struct LogLammpsReader {
 impl LogLammpsReader {
     /** Constructor to create a new instance of LogLammpsReader.
 
-    Parameters:
+    ### Parameters:
     log_file_name: File path for the LAMMPS log file
-    thermo_run_number: The index of the run thermo (default = 0)*/
+    thermo_run_number: The index of the run thermo (default = 0)
+
+    Returns a polars DataFrame object*/
     pub fn new(
         log_file_name: PathBuf,
         run_number: Option<u32>,
@@ -28,6 +30,13 @@ impl LogLammpsReader {
         LogLammpsReader { log_file_name }.parse_lammps_log(run_number.unwrap_or_default())
     }
 
+    /** Constructor to create a new instance of LogLammpsReader.
+
+    ### Parameters:
+    log_file_name: File path for the LAMMPS log file
+    prefix_key: The prefix string to find the lines in log file
+
+    Returns a vector of strings. */
     pub fn log_starts_with(
         log_file_name: PathBuf,
         prefix_key: &str,
@@ -35,6 +44,7 @@ impl LogLammpsReader {
         LogLammpsReader { log_file_name }.parse_log_starts_with(prefix_key)
     }
 
+    /// Returns a BufReader for a certain file
     fn log_buffer_reader(
         log_file_name: &PathBuf,
     ) -> Result<BufReader<File>, Box<dyn std::error::Error>> {
@@ -95,7 +105,7 @@ impl LogLammpsReader {
             // Parse data rows
             let row: Vec<f64> = line
                 .split_whitespace()
-                .filter_map(|s: &str| s.parse().ok())
+                .filter_map(|element: &str| element.parse().ok())
                 .collect();
 
             // filter out invalid rows.
@@ -116,17 +126,20 @@ impl LogLammpsReader {
         }
 
         // Convert the parsed data into a polars Series
-        let columns: Vec<Series> = (0..log_data[0].len())
-            .map(|i: usize| {
-                let column_data: Vec<f64> =
-                    log_data.par_iter().map(|row: &Vec<f64>| row[i]).collect();
-                Series::new(&log_header[i], column_data)
+        let columns: Vec<Series> = (0..log_header.len())
+            .map(|index: usize| {
+                let column_data: Vec<f64> = log_data
+                    .par_iter()
+                    .map(|row: &Vec<f64>| row[index])
+                    .collect();
+                Series::new(&log_header[index], column_data)
             })
             .collect();
 
         Ok(DataFrame::new(columns)?)
     }
 
+    /// Returns all instance of a prefix string in a file
     fn parse_log_starts_with(
         &self,
         prefix_key: &str,
