@@ -4,9 +4,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
-const MPI_FLAG: &str = "Per MPI rank memory allocation";
-const ERROR_FLAGS: [&str; 2] = ["Loop time", "ERROR"];
-
 /** This Rust code uses the Polars library to parse log files,
 particularly from LAMMPS simulations. The goal is to read
 specific data blocks from the log file and convert them
@@ -14,6 +11,10 @@ into a DataFrame format for further analysis. */
 pub struct LogLammpsReader {
     log_file_name: PathBuf,
 }
+
+const MPI_FLAG: &str = "Per MPI rank memory allocation";
+const ERROR_FLAGS: [&str; 2] = ["Loop time", "ERROR"];
+const UNSUPPORTED_THERMO_STYLES: [&str; 2] = ["thermo_style multi", "thermo_style yaml"];
 
 impl LogLammpsReader {
     /** Constructor to create a new instance of LogLammpsReader.
@@ -74,6 +75,16 @@ impl LogLammpsReader {
 
             // Check for MPI flag to set minimization and data flags.
             if !data_flag {
+                if UNSUPPORTED_THERMO_STYLES
+                    .iter()
+                    .any(|&flag| line.starts_with(flag))
+                {
+                    return Err(format!(
+                        "This thermo style '{}' is not supported. Use 'one' or 'custom'",
+                        line
+                    )
+                    .into());
+                }
                 if line.starts_with(MPI_FLAG) {
                     data_flag = true;
                 }
@@ -120,7 +131,7 @@ impl LogLammpsReader {
                 \n1. Incorrect 'run_number' parameter (Try 'run_number = {}')
                 \n2. Unsual format of log file",
                 thermo_run_number,
-                thermo_run_number - 1
+                thermo_run_number.saturating_sub(1)
             )
             .into());
         }
