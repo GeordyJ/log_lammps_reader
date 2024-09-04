@@ -10,11 +10,11 @@ It also has the ability to get the lines in the log file that start with a certa
 
 - **High-speed** reading of LAMMPS log files
 - Converts log data into Polars DataFrames
-- Exposes functionality to Python through a PyO3 module
+- Easily convert DataFrame into other formats like json, csv, parquet etc using polars
 - Gets thermo data for multiple thermo runs
 - Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log)
 - Only stores the needed thermo run data specified by user
-- Also able to get lines in the log file which starts with a certain string prefix
+- Also able to get lines in the log file which starts with a certain string prefix (e.g 'fix ...')
 
 ## Installation
 
@@ -29,7 +29,7 @@ Alternatively look at build instructions to build the project.
 ## Usage Examples
 
 - Note the `run_number = 0` gives the first data output which might include the minimization run.
-- To get the useful data start with `run_number = 1`.
+- To exclude minimization data, start with `run_number = 1`.
 
 ```python
 import log_lammps_reader
@@ -148,7 +148,13 @@ Alternatively, to build the Python module, follow these steps:
    pip install maturin # or use conda or micromamba
    ```
 
-2. Compile the Rust packages and install the python module.
+2. Clone the repository
+
+   ```bash
+   git clone https://github.com/GeordyJ/log_lammps_reader.git && cd log_lammps_reader
+   ```
+
+3. Compile the Rust packages and install the python module.
 
     ```bash
     maturin develop --release

@@ -127,7 +127,7 @@ impl LogLammpsReader {
 
         if log_data.is_empty() {
             return Err(format!(
-                "No data found in the log file for run: {}\nThis may be caused due to
+                "No data found in the log file for run: {}\nThis may be caused due to:
                 \n1. Incorrect 'run_number' parameter (Try 'run_number = {}')
                 \n2. Unsual format of log file",
                 thermo_run_number,
