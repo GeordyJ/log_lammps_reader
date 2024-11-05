@@ -51,7 +51,7 @@ parse log files. It utilizes the LogLammpsReader struct from the
 `reader` module to handle the actual parsing and conversion of log
 file data into a DataFrame. */
 #[pymodule]
-fn log_lammps_reader(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
+fn log_lammps_reader(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(new, m)?)?;
     m.add_function(wrap_pyfunction!(log_starts_with, m)?)?;
     Ok(())

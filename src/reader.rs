@@ -137,13 +137,13 @@ impl LogLammpsReader {
         }
 
         // Convert the parsed data into a polars Series
-        let columns: Vec<Series> = (0..log_header.len())
+        let columns: Vec<Column> = (0..log_header.len())
             .map(|index: usize| {
                 let column_data: Vec<f64> = log_data
                     .par_iter()
                     .map(|row: &Vec<f64>| row[index])
                     .collect();
-                Series::new(&log_header[index], column_data)
+                Column::new((&log_header[index]).into(), column_data)
             })
             .collect();
 
