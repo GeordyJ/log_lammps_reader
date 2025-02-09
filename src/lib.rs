@@ -13,6 +13,7 @@ The default thermo_run_number includes the MPI minimization data
 So usually what you need will start at index 1
 */
 #[pyfunction]
+#[pyo3(signature = (log_file_name, req_thermo_run_id=None))]
 fn new(log_file_name: &str, req_thermo_run_id: Option<u32>) -> PyResult<PyDataFrame> {
     match LogLammpsReader::new(log_file_name.into(), req_thermo_run_id) {
         Ok(df) => Ok(PyDataFrame(df)),
