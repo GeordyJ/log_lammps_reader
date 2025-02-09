@@ -15,6 +15,7 @@ It also has the ability to get the lines in the log file that start with a certa
 - Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log)
 - Only stores the needed thermo run data specified by user
 - Also able to get lines in the log file which starts with a certain string prefix (e.g 'fix ...')
+- Compiled code ensures that it does not any other dependencies at execution.
 
 ## Installation
 
@@ -28,8 +29,8 @@ Alternatively look at build instructions to build the project.
 
 ## Usage Examples
 
-- Note the `run_number = 0` gives the first data output which might include the minimization run.
-- To exclude minimization data, start with `run_number = 1`.
+- Note the `required_thermo_run_id = 0` gives the first data output which might include the minimization run.
+- To exclude minimization data, start with `required_thermo_run_id = 1`.
 
 ```python
 import log_lammps_reader
@@ -122,10 +123,10 @@ use log_lammps_reader::LogLammpsReader;
 fn main() {
     let log_file_name = "log.lammps";
     // skipping minimization
-    let run_number = Some(1);
+    let required_thermo_run_id = Some(1);
 
 
-    match LogLammpsReader::new(log_file_name.into(), run_number) {
+    match LogLammpsReader::new(log_file_name.into(), required_thermo_run_id) {
         Ok(df) => println!("DataFrame read successfully: {:?}", df),
         Err(e) => eprintln!("Error reading DataFrame: {}", e),
     }

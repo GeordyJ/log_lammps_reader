@@ -74,7 +74,6 @@ impl LogLammpsReader {
         for line_result in log_reader.lines() {
             let line: String = line_result?;
 
-            // Check for MPI flag to set minimization and data flags.
             if !data_flag {
                 if UNSUPPORTED_THERMO_STYLES
                     .iter()
@@ -96,7 +95,6 @@ impl LogLammpsReader {
                 continue;
             }
 
-            // Reset flags and increase run number upon encountering any error flags.
             if ERROR_FLAGS.iter().any(|&flag| line.starts_with(flag)) {
                 data_flag = false;
                 thermo_run_id += 1;
