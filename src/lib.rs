@@ -7,14 +7,14 @@ use reader::LogLammpsReader;
 /**
 ### Parameters:
 `log_file_name`: File path for the LAMMPS log file
-`thermo_run_number`: The index of the run thermo (default = 0)
+`requried_thermo_run_id`: The index of the run thermo output (default = 0)
 Note:
 The default thermo_run_number includes the MPI minimization data
 So usually what you need will start at index 1
 */
 #[pyfunction]
-fn new(log_file_name: &str, thermo_run_number: Option<u32>) -> PyResult<PyDataFrame> {
-    match LogLammpsReader::new(log_file_name.into(), thermo_run_number) {
+fn new(log_file_name: &str, req_thermo_run_id: Option<u32>) -> PyResult<PyDataFrame> {
+    match LogLammpsReader::new(log_file_name.into(), req_thermo_run_id) {
         Ok(df) => Ok(PyDataFrame(df)),
         Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
             "LogLammpsReader error: {}",
