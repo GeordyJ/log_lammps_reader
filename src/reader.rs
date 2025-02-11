@@ -24,7 +24,7 @@ impl LogLammpsReader {
     requried_thermo_run_id: The index of the run thermo (default = 0)
 
     Returns a polars DataFrame object*/
-    pub fn new(
+    pub fn parse(
         log_file_name: PathBuf,
         requried_thermo_run_id: Option<u32>,
     ) -> Result<DataFrame, Box<dyn std::error::Error>> {
@@ -134,7 +134,7 @@ impl LogLammpsReader {
         if log_data.is_empty() {
             return Err(format!(
                 "No data found in the log file for run: {}\nThis may be caused due to:
-                \n1. Incorrect 'run_number' parameter (Try 'run_number = {}')
+                \n1. Incorrect 'requried_thermo_run_id' parameter (Try 'requried_thermo_run_id = {}')
                 \n2. Unsual format of log file",
                 req_thermo_run_id,
                 req_thermo_run_id.saturating_sub(1)

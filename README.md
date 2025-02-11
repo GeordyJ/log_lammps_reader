@@ -36,13 +36,13 @@ Alternatively look at build instructions to build the project.
 import log_lammps_reader
 
 thermo_number = 0 # Choose the nth number of thermo run
-df = log_lammps_reader.new('log.lammps') # polars DataFrame for 1st thermo run
+df = log_lammps_reader.parse('log.lammps') # polars DataFrame for 1st thermo run
 # usually the minimization run
 
 # Or choose the nth number of thermo run (default n = 0)
 # n = 0 might consider the MPI minimization data, so in most cases
 # start with n = 1
-df = log_lammps_reader.new('log.lammps', n) 
+df = log_lammps_reader.parse('log.lammps', n) 
 time = df.get_column('Time') # Get any thermo column
 time_squared = time ** 2 # use broadcasting operations similar to numpy
 
@@ -62,7 +62,7 @@ Example of a DataFrame for a LAMMPS log file.
 
 ```python
 >>> import log_lammps_reader
->>> df = log_lammps_reader.new('log.lammps', 1)
+>>> df = log_lammps_reader.parse('log.lammps', 1)
 >>> df
 shape: (10_000_002, 10)
 ┌──────────────┬───────────┬───────────┬───────────┬───┬───────┬────────────┬───────────┬───────────┐
@@ -126,7 +126,7 @@ fn main() {
     let required_thermo_run_id = Some(1);
 
 
-    match LogLammpsReader::new(log_file_name.into(), required_thermo_run_id) {
+    match LogLammpsReader::parse(log_file_name.into(), required_thermo_run_id) {
         Ok(df) => println!("DataFrame read successfully: {:?}", df),
         Err(e) => eprintln!("Error reading DataFrame: {}", e),
     }

@@ -14,8 +14,26 @@ So usually what you need will start at index 1
 */
 #[pyfunction]
 #[pyo3(signature = (log_file_name, requried_thermo_run_id=None))]
+fn parse(log_file_name: &str, requried_thermo_run_id: Option<u32>) -> PyResult<PyDataFrame> {
+    match LogLammpsReader::parse(log_file_name.into(), requried_thermo_run_id) {
+        Ok(df) => Ok(PyDataFrame(df)),
+        Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
+            "LogLammpsReader error: {}",
+            e
+        ))),
+    }
+}
+
+/**
+### Depreciation Warning: Use .parse() instead of .new()
+*/
+#[pyfunction]
+#[pyo3(signature = (log_file_name, requried_thermo_run_id=None))]
 fn new(log_file_name: &str, requried_thermo_run_id: Option<u32>) -> PyResult<PyDataFrame> {
-    match LogLammpsReader::new(log_file_name.into(), requried_thermo_run_id) {
+    println!(
+        "Depreciation Warning: The .new() function has been renamed to .parse(). It will be removed in future versions!"
+    );
+    match LogLammpsReader::parse(log_file_name.into(), requried_thermo_run_id) {
         Ok(df) => Ok(PyDataFrame(df)),
         Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
             "LogLammpsReader error: {}",
@@ -54,6 +72,7 @@ file data into a DataFrame. */
 #[pymodule]
 fn log_lammps_reader(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(new, m)?)?;
+    m.add_function(wrap_pyfunction!(parse, m)?)?;
     m.add_function(wrap_pyfunction!(log_starts_with, m)?)?;
     Ok(())
 }
