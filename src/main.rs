@@ -19,7 +19,7 @@ fn main() {
     };
 
     // Create a LogLammpsReader instance and read the DataFrame
-    match LogLammpsReader::new(log_file_name.into(), thermo_run_number) {
+    match LogLammpsReader::parse(log_file_name.into(), thermo_run_number) {
         Ok(df) => {
             println!("DataFrame read successfully: {:?}", df);
         }
