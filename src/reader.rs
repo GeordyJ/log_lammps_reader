@@ -165,8 +165,8 @@ impl LogLammpsReader {
         let log_reader: BufReader<File> = LogLammpsReader::log_buffer_reader(&self.log_file_name)?;
         for line_result in log_reader.lines() {
             let line: String = line_result?;
-            if line.starts_with(prefix_key) {
-                matched_lines.push(line)
+            if line.trim().starts_with(prefix_key) {
+                matched_lines.push(line.trim().to_string())
             }
         }
         Ok(matched_lines)
