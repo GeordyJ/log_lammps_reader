@@ -8,7 +8,7 @@ It also has the ability to get the lines in the log file that start with a certa
 
 ## Features
 
-- **High-speed** reading of LAMMPS log files
+- **High-speed** reading of LAMMPS log files and LAMMPS dump files.
 - Converts log data into Polars DataFrames
 - Easily convert DataFrame into other formats like json, csv, parquet etc using polars
 - Gets thermo data for multiple thermo runs
@@ -53,6 +53,12 @@ equilibrated_df = df.filter(pl.col('Time') > 1)
 # Convert data to numpy if needed
 import numpy as np
 step = np.array(df.get_column('Step'))
+
+# get an array of trajectories from dump file
+complete_dump_arr = log_lammps_reder.parse_dump('log.dump')
+for single_dump_df in complete_dump_arr:
+    print(single_dump_df) # polars DataFrame
+```
 
 # Get lines in the log that start with a prefix string
 fixes_list = log_lammps_reader.log_starts_with('log.lammps', 'fix')

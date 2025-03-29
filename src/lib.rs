@@ -1,8 +1,10 @@
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
 
-mod reader;
-use reader::LogLammpsReader;
+mod dump_reader;
+mod log_reader;
+use dump_reader::DumpLammpsReader;
+use log_reader::LogLammpsReader;
 
 /**
 ### Parameters:
@@ -19,6 +21,31 @@ fn parse(log_file_name: &str, requried_thermo_run_id: Option<u32>) -> PyResult<P
         Ok(df) => Ok(PyDataFrame(df)),
         Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
             "LogLammpsReader error: {}",
+            e
+        ))),
+    }
+}
+
+/**
+Parses a LAMMPS dump file and returns a vector of PyDataFrame objects.
+
+# Arguments
+* `log_file_name` - A string slice that holds the name of the LAMMPS dump file to be parsed.
+
+# Returns
+* `PyResult<Vec<PyDataFrame>>` - A Python result containing a vector of polars DataFrame objects
+  if parsing is successful, or a Python exception if an error occurs.
+
+# Errors
+* Returns a `PyException` if the `LammpsDumpReader::parse` function fails.
+*/
+#[pyfunction]
+#[pyo3(signature = (log_file_name))]
+fn parse_dump(log_file_name: &str) -> PyResult<Vec<PyDataFrame>> {
+    match DumpLammpsReader::parse(log_file_name.into()) {
+        Ok(df_arr) => Ok(df_arr.into_iter().map(|df| PyDataFrame(df)).collect()),
+        Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
+            "DumpLammpsReader error: {}",
             e
         ))),
     }
@@ -73,6 +100,7 @@ file data into a DataFrame. */
 fn log_lammps_reader(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(new, m)?)?;
     m.add_function(wrap_pyfunction!(parse, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_dump, m)?)?;
     m.add_function(wrap_pyfunction!(log_starts_with, m)?)?;
     Ok(())
 }
