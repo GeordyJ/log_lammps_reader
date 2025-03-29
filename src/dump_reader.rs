@@ -1,5 +1,6 @@
 use polars::prelude::*;
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -11,13 +12,15 @@ pub struct DumpLammpsReader {
 
 impl DumpLammpsReader {
     // API to parse LAMMPS dump file
-    pub fn parse(dump_file_name: PathBuf) -> Result<Vec<DataFrame>, Box<dyn std::error::Error>> {
+    pub fn parse(
+        dump_file_name: PathBuf,
+    ) -> Result<HashMap<u64, DataFrame>, Box<dyn std::error::Error>> {
         DumpLammpsReader { dump_file_name }.parse_lammps_dump()
     }
 
     // Parse LAMMPS dump file
-    fn parse_lammps_dump(&self) -> Result<Vec<DataFrame>, Box<dyn std::error::Error>> {
-        //let mut timesteps: Vec<String> = Vec::new();
+    fn parse_lammps_dump(&self) -> Result<HashMap<u64, DataFrame>, Box<dyn std::error::Error>> {
+        let mut timesteps: Vec<String> = Vec::new();
         //let mut atoms: Vec<String> = Vec::new();
         let mut single_dump_data: Vec<String> = Vec::new();
         let mut dump_data: Vec<Vec<String>> = Vec::new();
@@ -36,7 +39,7 @@ impl DumpLammpsReader {
         while let Some(line_result) = lines.next() {
             let line: String = line_result?;
             if line.starts_with("ITEM: TIMESTEP") {
-                //timesteps.push(lines.next().unwrap().unwrap());
+                timesteps.push(lines.next().unwrap().unwrap());
                 start_parse_data = false;
             }
             if line.starts_with("ITEM: NUMBER OF ATOMS") {
@@ -65,10 +68,10 @@ impl DumpLammpsReader {
                 single_dump_data.push(line);
             }
         }
-        //let timesteps: Vec<u64> = timesteps
-        //    .iter()
-        //    .map(|x| x.split_whitespace().last().unwrap().parse::<u64>().unwrap())
-        //    .collect();
+        let timesteps: Vec<u64> = timesteps
+            .iter()
+            .map(|x| x.split_whitespace().last().unwrap().parse::<u64>().unwrap())
+            .collect();
         //let atoms: Vec<u64> = atoms
         //    .iter()
         //    .map(|x| x.split_whitespace().last().unwrap().parse::<u64>().unwrap())
@@ -88,13 +91,6 @@ impl DumpLammpsReader {
                     .map(|line| line.split_whitespace().map(String::from).collect())
                     .collect();
 
-                // Ensure all rows have the same length as header
-                let col_count = header.len();
-                assert!(
-                    parsed_data.iter().all(|row| row.len() == col_count),
-                    "Row length does not match header length"
-                );
-
                 // Transpose data into columns
                 let mut columns: Vec<Column> = Vec::new();
                 for (col_idx, col_name) in header.iter().enumerate() {
@@ -103,12 +99,12 @@ impl DumpLammpsReader {
                         .map(|row| row[col_idx].as_str())
                         .collect();
 
-                    let series = if col_data.iter().all(|v| v.parse::<f64>().is_ok()) {
-                        let col_values: Vec<f64> =
+                    let series = if col_data.iter().all(|v| v.parse::<i64>().is_ok()) {
+                        let col_values: Vec<i64> =
                             col_data.iter().map(|v| v.parse().unwrap()).collect();
                         Column::new(col_name.to_string().into(), col_values)
-                    } else if col_data.iter().all(|v| v.parse::<i64>().is_ok()) {
-                        let col_values: Vec<i64> =
+                    } else if col_data.iter().all(|v| v.parse::<f64>().is_ok()) {
+                        let col_values: Vec<f64> =
                             col_data.iter().map(|v| v.parse().unwrap()).collect();
                         Column::new(col_name.to_string().into(), col_values)
                     } else {
@@ -122,6 +118,11 @@ impl DumpLammpsReader {
                 DataFrame::new(columns).expect("Failed to create DataFrame")
             })
             .collect();
-        Ok(dump_data)
+        let data_map: HashMap<u64, DataFrame> = timesteps
+            .iter()
+            .cloned()
+            .zip(dump_data.iter().cloned())
+            .collect();
+        Ok(data_map)
     }
 }

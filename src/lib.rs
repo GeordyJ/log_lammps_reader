@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
+use std::collections::HashMap;
 
 mod dump_reader;
 mod log_reader;
@@ -27,23 +28,26 @@ fn parse(log_file_name: &str, requried_thermo_run_id: Option<u32>) -> PyResult<P
 }
 
 /**
-Parses a LAMMPS dump file and returns a vector of PyDataFrame objects.
+Parses a LAMMPS dump file and returns a HashMap/dict of timesteps and polars DataFrame objects.
 
 # Arguments
-* `log_file_name` - A string slice that holds the name of the LAMMPS dump file to be parsed.
+* `dump_file_name` - A string slice representing the name of the LAMMPS dump file to be parsed.
 
 # Returns
-* `PyResult<Vec<PyDataFrame>>` - A Python result containing a vector of polars DataFrame objects
-  if parsing is successful, or a Python exception if an error occurs.
+* `dict{int,polars.DataFrame}` - A Python result containing a HashMap where the keys
+  are timesteps (int) and the values are polars DataFrame objects, or a Python exception if an error occurs.
 
 # Errors
-* Returns a `PyException` if the `LammpsDumpReader::parse` function fails.
+ Returns a `PyException` if the `DumpLammpsReader::parse` function fails.
 */
 #[pyfunction]
-#[pyo3(signature = (log_file_name))]
-fn parse_dump(log_file_name: &str) -> PyResult<Vec<PyDataFrame>> {
-    match DumpLammpsReader::parse(log_file_name.into()) {
-        Ok(df_arr) => Ok(df_arr.into_iter().map(|df| PyDataFrame(df)).collect()),
+#[pyo3(signature = (dump_file_name))]
+fn parse_dump(dump_file_name: &str) -> PyResult<HashMap<u64, PyDataFrame>> {
+    match DumpLammpsReader::parse(dump_file_name.into()) {
+        Ok(df_map) => Ok(df_map
+            .into_iter()
+            .map(|(timestep, df)| (timestep, PyDataFrame(df)))
+            .collect()),
         Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
             "DumpLammpsReader error: {}",
             e

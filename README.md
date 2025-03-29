@@ -4,17 +4,19 @@ Log LAMMPS Reader is a high-performance Rust library and Python extension for re
 
 This package returns a polars DataFrame allowing the user to use powerful data manipulations (e.g filters) provided through polars. The user can specify which specific thermo output given by `run` or `mimimize` that is required.
 
+In addition, this package can also read LAMMPS dump files and return a dictionary of Int and  polars DataFrames, each DataFrame representing a single dump trajectories and the integer representing `timestep`.
+
 It also has the ability to get the lines in the log file that start with a certain string prefix, like `fix` or `print` extremely quickly using rust backend. This can be parsed using python to get information about the parameters set for the simulation.
 
 ## Features
 
 - **High-speed** reading of LAMMPS log files and LAMMPS dump files.
-- Converts log data into Polars DataFrames
-- Easily convert DataFrame into other formats like json, csv, parquet etc using polars
-- Gets thermo data for multiple thermo runs
-- Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log)
-- Only stores the needed thermo run data specified by user
-- Also able to get lines in the log file which starts with a certain string prefix (e.g 'fix ...')
+- Converts log data into Polars DataFrames.
+- Easily convert DataFrame into other formats like json, csv, parquet etc using polars.
+- Gets thermo data for multiple thermo runs.
+- Better data parsing, skips rows if they are invalid (e.g missing newline, non-numeric characters in the log).
+- Only stores the needed thermo run data specified by user.
+- Also able to get lines in the log file which starts with a certain string prefix (e.g 'fix ...').
 - Compiled code ensures that it does not any other dependencies at execution.
 
 ## Installation
@@ -54,9 +56,11 @@ equilibrated_df = df.filter(pl.col('Time') > 1)
 import numpy as np
 step = np.array(df.get_column('Step'))
 
-# get an array of trajectories from dump file
+# Parse LAMMPS dump files
+# Returns a dictionary of timesteps (Int) and trajectories (polars DataFrame)
 complete_dump_arr = log_lammps_reder.parse_dump('log.dump')
-for single_dump_df in complete_dump_arr:
+for timestep, single_dump_df in complete_dump_arr.items():
+    print(timestep) # timestep
     print(single_dump_df) # polars DataFrame
 ```
 
