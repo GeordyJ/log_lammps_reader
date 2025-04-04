@@ -1,6 +1,6 @@
 use polars::prelude::*;
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -14,12 +14,12 @@ impl DumpLammpsReader {
     // API to parse LAMMPS dump file
     pub fn parse(
         dump_file_name: PathBuf,
-    ) -> Result<HashMap<u64, DataFrame>, Box<dyn std::error::Error>> {
+    ) -> Result<BTreeMap<u64, DataFrame>, Box<dyn std::error::Error>> {
         DumpLammpsReader { dump_file_name }.parse_lammps_dump()
     }
 
     // Parse LAMMPS dump file
-    fn parse_lammps_dump(&self) -> Result<HashMap<u64, DataFrame>, Box<dyn std::error::Error>> {
+    fn parse_lammps_dump(&self) -> Result<BTreeMap<u64, DataFrame>, Box<dyn std::error::Error>> {
         let mut timesteps: Vec<String> = Vec::new();
         //let mut atoms: Vec<String> = Vec::new();
         let mut single_dump_data: Vec<String> = Vec::new();
@@ -68,6 +68,12 @@ impl DumpLammpsReader {
                 single_dump_data.push(line);
             }
         }
+
+        if !single_dump_data.is_empty() {
+            dump_data.push(single_dump_data);
+        }
+
+        // INFO: Begin parsing data into types
         let timesteps: Vec<u64> = timesteps
             .iter()
             .map(|x| x.split_whitespace().last().unwrap().parse::<u64>().unwrap())
@@ -78,7 +84,7 @@ impl DumpLammpsReader {
         //    .collect();
         let header = header
             .strip_prefix("ITEM: ATOMS")
-            .expect("Failed to strip prefix")
+            .expect("Failed to parse header...")
             .split_whitespace()
             .collect::<Vec<&str>>();
 
@@ -118,7 +124,7 @@ impl DumpLammpsReader {
                 DataFrame::new(columns).expect("Failed to create DataFrame")
             })
             .collect();
-        let data_map: HashMap<u64, DataFrame> = timesteps
+        let data_map: BTreeMap<u64, DataFrame> = timesteps
             .iter()
             .cloned()
             .zip(dump_data.iter().cloned())

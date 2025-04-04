@@ -153,6 +153,14 @@ Alternatively, to build the Python module, follow these steps:
 - Python 3.8 or later
 - Cargo (Rust package manager)
 
+- Use-
+
+   ```bash
+   pip install git+https://github.com/GeordyJ/log_lammps_reader.git
+   ```
+
+- Alternatively,
+
 1. Ensure you have `maturin` installed:
 
    ```bash

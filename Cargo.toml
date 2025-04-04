@@ -9,7 +9,7 @@ name = "log_lammps_reader"
 crate-type = ["cdylib"]
 
 [dependencies]
-polars = "0.46.0"
+polars = { version = "0.46.0", features = ["lazy"] }
 pyo3 = "0.23.5"
 pyo3-polars = "0.20.0"
 rayon = "1.10.0"

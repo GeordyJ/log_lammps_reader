@@ -1,9 +1,11 @@
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
+mod analyze;
 mod dump_reader;
 mod log_reader;
+use analyze::AnalyzeLammps;
 use dump_reader::DumpLammpsReader;
 use log_reader::LogLammpsReader;
 
@@ -28,13 +30,13 @@ fn parse(log_file_name: &str, requried_thermo_run_id: Option<u32>) -> PyResult<P
 }
 
 /**
-Parses a LAMMPS dump file and returns a HashMap/dict of timesteps and polars DataFrame objects.
+Parses a LAMMPS dump file and returns a BTreeMap/dict of timesteps and polars DataFrame objects.
 
 # Arguments
 * `dump_file_name` - A string slice representing the name of the LAMMPS dump file to be parsed.
 
 # Returns
-* `dict{int,polars.DataFrame}` - A Python result containing a HashMap where the keys
+* `dict{int,polars.DataFrame}` - A Python result containing a BTreeMap where the keys
   are timesteps (int) and the values are polars DataFrame objects, or a Python exception if an error occurs.
 
 # Errors
@@ -42,7 +44,7 @@ Parses a LAMMPS dump file and returns a HashMap/dict of timesteps and polars Dat
 */
 #[pyfunction]
 #[pyo3(signature = (dump_file_name))]
-fn parse_dump(dump_file_name: &str) -> PyResult<HashMap<u64, PyDataFrame>> {
+fn parse_dump(dump_file_name: &str) -> PyResult<BTreeMap<u64, PyDataFrame>> {
     match DumpLammpsReader::parse(dump_file_name.into()) {
         Ok(df_map) => Ok(df_map
             .into_iter()
@@ -92,6 +94,17 @@ fn log_starts_with(log_file_name: &str, prefix_key: &str) -> PyResult<Vec<String
     }
 }
 
+#[pyfunction]
+fn mean_square_displacement(file_name: &str) -> PyResult<BTreeMap<u64, f64>> {
+    match AnalyzeLammps::mean_square_displacements(file_name.into()) {
+        Ok(msd) => Ok(msd),
+        Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
+            "AnalyzeLammps error: {}",
+            e
+        ))),
+    }
+}
+
 /** Adds the rust function to the python module.
 This Rust code integrates with Python using PyO3 and PyPolars
 to provide a Python interface for reading and processing LAMMPS
@@ -106,5 +119,8 @@ fn log_lammps_reader(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse, m)?)?;
     m.add_function(wrap_pyfunction!(parse_dump, m)?)?;
     m.add_function(wrap_pyfunction!(log_starts_with, m)?)?;
+    let analyze = PyModule::new(m.py(), "analyze")?;
+    analyze.add_function(wrap_pyfunction!(mean_square_displacement, &analyze)?)?;
+    m.add_submodule(&analyze)?;
     Ok(())
 }

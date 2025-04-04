@@ -1,5 +1,5 @@
-mod reader;
-use reader::LogLammpsReader;
+mod log_reader;
+use log_reader::LogLammpsReader;
 
 /** Tests the LogLammpsReader by getting arguments from
  CLI. The first is the filename and the second is the optional
