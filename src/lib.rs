@@ -95,8 +95,15 @@ fn log_starts_with(log_file_name: &str, prefix_key: &str) -> PyResult<Vec<String
 }
 
 #[pyfunction]
-fn mean_square_displacement(file_name: &str) -> PyResult<BTreeMap<u64, f64>> {
-    match AnalyzeLammps::mean_square_displacements(file_name.into()) {
+#[pyo3(signature = (file_name, unwrap_trajectory=None))]
+fn mean_square_displacement(
+    file_name: &str,
+    unwrap_trajectory: Option<bool>,
+) -> PyResult<BTreeMap<u64, f64>> {
+    match AnalyzeLammps::mean_square_displacement(
+        file_name.into(),
+        unwrap_trajectory.unwrap_or_default(),
+    ) {
         Ok(msd) => Ok(msd),
         Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
             "AnalyzeLammps error: {}",
