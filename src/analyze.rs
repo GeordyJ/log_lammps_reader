@@ -122,9 +122,6 @@ impl AnalyzeLammps {
         }
 
         let dump_data: BTreeMap<u64, DataFrame> = system.get_dump_map()?;
-        // println!("trajectories {:?}", system.trajectories);
-        // println!("Box state {:?}", system.box_state);
-        // println!("timesteps {:?}", system.timesteps);
 
         // Assume first timestep is initial positions
         let Some(first_df) = system.trajectories.iter().next() else {

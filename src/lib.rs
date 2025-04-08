@@ -57,6 +57,18 @@ fn parse_dump(dump_file_name: &str) -> PyResult<BTreeMap<u64, PyDataFrame>> {
     }
 }
 
+#[pyfunction]
+#[pyo3(signature = (dump_file_name))]
+fn parse_dump_state(dump_file_name: &str) -> PyResult<PyDataFrame> {
+    match DumpLammpsReader::parse_state(dump_file_name.into()) {
+        Ok(df) => Ok(PyDataFrame(df)),
+        Err(e) => Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
+            "DumpLammpsReader error: {}",
+            e
+        ))),
+    }
+}
+
 /**
 ### Depreciation Warning: Use .parse() instead of .new()
 */
@@ -125,6 +137,7 @@ fn log_lammps_reader(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(new, m)?)?;
     m.add_function(wrap_pyfunction!(parse, m)?)?;
     m.add_function(wrap_pyfunction!(parse_dump, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_dump_state, m)?)?;
     m.add_function(wrap_pyfunction!(log_starts_with, m)?)?;
     let analyze = PyModule::new(m.py(), "analyze")?;
     analyze.add_function(wrap_pyfunction!(mean_square_displacement, &analyze)?)?;

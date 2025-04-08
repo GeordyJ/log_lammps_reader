@@ -28,6 +28,17 @@ impl DumpLammpsReader {
         system.get_dump_map()
     }
 
+    pub fn parse_state(dump_file_name: PathBuf) -> Result<DataFrame, Box<dyn std::error::Error>> {
+        let mut system = DumpLammpsReader {
+            dump_file_name,
+            timesteps: Vec::new(),
+            trajectories: Vec::new(),
+            box_state: DataFrame::empty(),
+        };
+        system.parse_lammps_dump()?;
+        Ok(system.box_state)
+    }
+
     // Parse LAMMPS dump file
     pub fn parse_lammps_dump(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let mut timesteps: Vec<String> = Vec::new();
