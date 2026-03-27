@@ -153,7 +153,7 @@ impl LogLammpsReader {
             })
             .collect();
 
-        Ok(DataFrame::new(columns)?)
+        Ok(DataFrame::new(columns[0].len(), columns)?)
     }
 
     /// Returns all instance of a prefix string in a file

@@ -95,11 +95,11 @@ impl AnalyzeLammps {
                 z_unwrapped.push(zj);
             }
 
-            df.replace("x".into(), Series::new("x".into(), x_unwrapped))
+            df.replace("x".into(), Column::new("x".into(), x_unwrapped))
                 .unwrap();
-            df.replace("y".into(), Series::new("y".into(), y_unwrapped))
+            df.replace("y".into(), Column::new("y".into(), y_unwrapped))
                 .unwrap();
-            df.replace("z".into(), Series::new("z".into(), z_unwrapped))
+            df.replace("z".into(), Column::new("z".into(), z_unwrapped))
                 .unwrap();
         }
 

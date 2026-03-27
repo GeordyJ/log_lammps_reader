@@ -144,7 +144,7 @@ impl DumpLammpsReader {
 
                     columns.push(series);
                 }
-                DataFrame::new(columns).expect("Failed to create DataFrame")
+                DataFrame::new(columns[0].len(), columns).expect("Failed to create DataFrame")
             })
             .collect();
 
